@@ -1,5 +1,4 @@
-import React from "react";
-import { useResizeObserver } from "../hooks/useResizeObserver";
+import React, { useRef, useEffect, useState } from "react";
 import "../styles/MultiSeriesPanel.css";
 
 const data = [
@@ -12,35 +11,46 @@ const data = [
 ];
 
 const MultiSeriesPanel = () => {
-  const [ref, size] = useResizeObserver();
-  const { width = 0, height = 0 } = size;
+  const containerRef = useRef(null);
+  const [boxStyles, setBoxStyles] = useState([]);
 
-  const idealItemWidth = 200;
-  const columns = Math.max(1, Math.floor(width / idealItemWidth));
-  const rows = Math.ceil(data.length / columns);
-  const itemHeight = height / rows;
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+
+        const minBoxWidth = 150;
+        const itemCount = data.length;
+        const columns = Math.floor(width / minBoxWidth) || 1;
+        const rows = Math.ceil(itemCount / columns);
+        const boxWidth = (width - (columns - 1) * 10) / columns;
+        const boxHeight = (height - (rows - 1) * 10) / rows;
+
+        const styles = data.map((_, index) => {
+          const isLastRow = index >= (rows - 1) * columns;
+          const lastRowCount = itemCount - (rows - 1) * columns;
+
+          return {
+            width: isLastRow
+              ? `${(width - (lastRowCount - 1) * 10) / lastRowCount}px`
+              : `${boxWidth}px`,
+            height: `${boxHeight}px`,
+          };
+        });
+
+        setBoxStyles(styles);
+      }
+    });
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div
-      ref={ref}
-      className="grid-panel"
-      style={{
-        gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
-        gridAutoFlow: "row dense",
-      }}
-    >
+    <div className="multi-panel" ref={containerRef}>
       {data.map((item, index) => (
-        <div className="grid-item" key={index}>
-          <div
-            className="value"
-            style={{
-              fontSize: `clamp(24px, ${
-                Math.min(width / columns, itemHeight) / 2
-              }px, 72px)`,
-            }}
-          >
-            {item.value}
-          </div>
+        <div key={index} className="multi-item" style={boxStyles[index]}>
+          <div className="value">{item.value}</div>
           <div className="label">{item.label}</div>
         </div>
       ))}
