@@ -5,7 +5,6 @@ import MultiSeriesPanel from "./components/MultiSeriesPanel";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import ReactiveGridTest from "./components/ReactiveGridTest";
 
 const App = () => {
   const layout = [
